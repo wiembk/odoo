@@ -1,0 +1,32 @@
+variables:
+    - IMAGE: ubuntu:20.04
+
+.default:
+    image:
+        name: python:3.8
+    
+stages:
+    - build
+    - test
+    - deploy
+
+build odoo:
+    image: ${IMAGE}
+    stage: build
+    script:
+        - docker pull bitnami/odoo:15
+        - docker build --cache-from bitnami/odoo:15 --tag bitnami/odoo:15 .
+        - curl -sSL https://raw.githubusercontent.com/bitnami/containers/main/bitnami/odoo/docker-compose.yml > docker-compose.yml
+        - docker push $CI_REGISTRY_IMAGE:latest
+    artifacts:
+        paths:
+            - build
+
+test odoo:
+    .image: ${IMAGE}
+    stage: test
+    script:
+        - apt-get update -qy
+        - apt-get install -y python-dev python-pip
+        - pip install -r requirements.txt
+        - python setup.py test
